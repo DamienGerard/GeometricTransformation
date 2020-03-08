@@ -5,47 +5,98 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.*;
-import javax.swing.border.LineBorder;
 
 public class mainBoard extends JPanel{
+	private static final long serialVersionUID = 1L;
 	public Graph myGraph;
-	private JScrollPane shapeList;
-	private ShapeList shapeListPanel;
+	private JScrollPane itemList;
+	private ItemList itemListPanel;
 	private JButton addShape;
+	private JButton addLine;
+	private JButton clip;
+	private JButton clear;
 	private JLabel helper;
 	
 	mainBoard(){
 		setLayout(new BorderLayout());
+		JPanel topPane = new JPanel();
 		
 		addShape = new JButton("Add Shape");
 		addShape.addActionListener(new ActionListener() {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				shapeListPanel.incIndex();
-				shapeListPanel.add(new ShapeItem(myGraph, shapeListPanel, shapeListPanel.getIndex()),0);
+				if(!(myGraph.isRecordingPoint())) {
+					myGraph.startRecordPoint();
+					itemListPanel.incShapeIndex();
+					itemListPanel.add(new ShapeItem(myGraph, itemListPanel, itemListPanel.getShapeIndex()), 0);		
+				}
 			}
 			
 		});
+		topPane.add(addShape);
 		
-		add(BorderLayout.NORTH, addShape);
+		addLine = new JButton("Add Line");
+		addLine.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if(!(myGraph.isRecordingPoint())) {
+					myGraph.startRecordPoint();
+					itemListPanel.incLineIndex();
+					LineItem newLine = new LineItem(myGraph, itemListPanel, itemListPanel.getLineIndex());
+					itemListPanel.add(newLine, 0);	
+					myGraph.setLineToRecord(newLine);
+					myGraph.setRecordingLine(true);	
+				}
+			}
+			
+		});
+		topPane.add(addLine);
 		
-		myGraph = new Graph(600, 450);
-		add(BorderLayout.CENTER, myGraph);
+		clip = new JButton("Clip");
+		clip.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				myGraph.toggleClippingState();
+			}
+			
+		});
+		topPane.add(clip);
 		
-		shapeListPanel = new ShapeList(this) {
+		clear = new JButton("Clear");
+		clear.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if(!(myGraph.isRecordingPoint())) {
+					itemListPanel.clear();
+				}
+			}
+			
+		});
+		topPane.add(clear);
+		
+		add(BorderLayout.NORTH, topPane);
+		
+		itemListPanel = new ItemList(this) {
+			private static final long serialVersionUID = 1L;
+
 			public Dimension getPreferredSize() {
 			    return new Dimension(350, this.length()*220);
 			}
 			
 		};
-		shapeListPanel.setLayout(new FlowLayout());
-		shapeList = new JScrollPane(shapeListPanel);
-		shapeList.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-		shapeList.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER); 
-		shapeList.getVerticalScrollBar().setUnitIncrement(16);
-		//shapeList.setBorder(new LineBorder(Color.ORANGE, 4, true));
-		add(BorderLayout.EAST, shapeList);
+		itemListPanel.setLayout(new FlowLayout());
+		itemList = new JScrollPane(itemListPanel);
+		itemList.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+		itemList.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER); 
+		itemList.getVerticalScrollBar().setUnitIncrement(16);
+		add(BorderLayout.EAST, itemList);
+		
+		myGraph = new Graph(600, 450, itemListPanel);
+		add(BorderLayout.CENTER, myGraph);
 		
 		helper = new JLabel("I'm here to help");
 		add(BorderLayout.SOUTH, helper);

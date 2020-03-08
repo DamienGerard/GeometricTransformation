@@ -15,39 +15,46 @@ import java.util.ArrayList;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSlider;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 
-public class ShapeTransformationMenu extends JPanel{
+public class ShapeTransformationMenu extends JPanel implements Runnable{
+	private static final long serialVersionUID = 1L;
+	private ShapeItem shape;
+	private Graph graph;
 	private ArrayList<ShapeTransformation> transformations;
 	private JButton more;
 	private JButton play;
-	private JButton pause;
 	private JSlider seekBar;
 	private JPanel transformationsListPanel;
 	private JScrollPane transformationsScrollPane;
 	private Image play_img;
 	private Image pause_img;
 	private boolean paused = true;
+	private Thread threadTransform;
+	private boolean execTransform = false;
 	
-	public ShapeTransformationMenu() {
+	public ShapeTransformationMenu(ShapeItem s, Graph g) {
+		shape = s;
+		graph = g;
 		setPreferredSize(new Dimension(275, 140));
 		setLayout(new BorderLayout());
 		transformations = new ArrayList<ShapeTransformation>();
 		add(BorderLayout.NORTH, new JLabel("Transformations"));
 		
 		transformationsListPanel = new JPanel() {
+			private static final long serialVersionUID = 1L;
 			public Dimension getPreferredSize() {
 			    return new Dimension(250, ShapeTransformationMenu.this.length()*80);
 			}
 		};
 		transformationsListPanel.setLayout(new FlowLayout());
 		transformationsScrollPane = new JScrollPane(transformationsListPanel);
-		//transformationsScrollPane.setPreferredSize(new Dimension(100, 80));
 		transformationsScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 		transformationsScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER); 
 		transformationsScrollPane.getVerticalScrollBar().setUnitIncrement(16);
@@ -85,11 +92,22 @@ public class ShapeTransformationMenu extends JPanel{
 		play.setBorderPainted(false);
 		play.addMouseListener(new customBtnListener());
 		play.addActionListener(new ActionListener() {
+			@SuppressWarnings("unchecked")
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				System.out.print("Clicked play\n");
 				if(paused) {
 					play.setIcon(new ImageIcon(pause_img));
+					if(!(execTransform)) {
+						int sumFrameCount = 0;
+						for(int i=0; i<transformations.size(); i++) {
+							transformations.get(i).setPoints((ArrayList<Double>) shape.getXPoints().clone(), (ArrayList<Double>) shape.getYPoints().clone());
+							sumFrameCount = sumFrameCount+transformations.get(i).getFramecount();
+						}
+						seekBar.setMaximum(sumFrameCount);
+						execTransform = true;
+						threadTransform = new Thread(ShapeTransformationMenu.this, "transformThread");
+						threadTransform.start();
+					}
 				}else {
 				    play.setIcon(new ImageIcon(play_img));
 				}
@@ -102,6 +120,15 @@ public class ShapeTransformationMenu extends JPanel{
 		controlBtnPane.add(play);
 		
 		seekBar = new JSlider();
+		seekBar.addChangeListener(new ChangeListener() {
+
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				exec(seekBar.getValue());
+			}
+			
+		});
+		seekBar.setValue(0);
 		controlBtnPane.add(seekBar);
 		
 		add(BorderLayout.SOUTH, controlBtnPane);
@@ -124,17 +151,26 @@ public class ShapeTransformationMenu extends JPanel{
 	public int length() {
 		return transformations.size();
 	}
-
-	public static void main(String[] args) {
-		JFrame frame = new JFrame();
-		frame.add(new ShapeTransformationMenu());
-		frame.pack();
-		frame.setVisible(true);
-		frame.setLocationRelativeTo(null);
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-	}
 	
-
+	public void exec(int frameNum) {
+		@SuppressWarnings("unchecked")
+		ArrayList<Double> xPoints = (ArrayList<Double>) shape.getOriginalXPoints().clone();
+		@SuppressWarnings("unchecked")
+		ArrayList<Double> yPoints = (ArrayList<Double>) shape.getOriginalYPoints().clone();
+		int sumFrameCount = 0;
+		
+		for(int i=0; i<transformations.size(); i++) {
+			if(frameNum>sumFrameCount) {
+				transformations.get(i).transform(xPoints, yPoints, frameNum-sumFrameCount);
+			}else {
+				break;
+			}
+			sumFrameCount = sumFrameCount+transformations.get(i).getFramecount();
+		}
+		
+		shape.setPolygon(xPoints, yPoints);
+		graph.repaint();
+	}
 	
 	private class customBtnListener implements MouseListener{
 		@Override
@@ -142,7 +178,6 @@ public class ShapeTransformationMenu extends JPanel{
 		}
 		@Override
 		public void mousePressed(MouseEvent e) {
-			// TODO Auto-generated method stub
 		}
 		@Override
 		public void mouseReleased(MouseEvent e) {
@@ -155,6 +190,36 @@ public class ShapeTransformationMenu extends JPanel{
 		public void mouseExited(MouseEvent e) {
 			setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 		}
+	}
+
+
+	@Override
+	public void run() {
+		while( execTransform) {
+			while(seekBar.getValue()<=seekBar.getMaximum() && !(paused)) {
+				try {
+					Thread.sleep(10);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				seekBar.setValue(seekBar.getValue()+1);
+				seekBar.revalidate();
+				seekBar.repaint();
+				if(seekBar.getValue()==seekBar.getMaximum()) {
+					execTransform = false;
+					shape.resetPolygon();
+					graph.repaint();
+					break;
+				}
+			}
+			System.out.print("");
+		}
+
+	    play.setIcon(new ImageIcon(play_img));
+	    paused = !(paused);
+		seekBar.setValue(0);
+		seekBar.revalidate();
+		seekBar.repaint();
 	}
 
 }

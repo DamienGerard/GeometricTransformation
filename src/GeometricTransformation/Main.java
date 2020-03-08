@@ -3,7 +3,6 @@ package GeometricTransformation;
 import javax.swing.JFrame;
 import javax.swing.UIManager;
 
-
 public class Main {
 	public static void main(String[] args) { 
 		try {
@@ -12,7 +11,7 @@ public class Main {
 			e.printStackTrace();
 		}
 		
-		JFrame frame = new JFrame();
+		JFrame frame = new JFrame("Geometric Transformation");
 		frame.add(new mainBoard());
 		frame.pack();
 		frame.setVisible(true);

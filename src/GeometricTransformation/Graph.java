@@ -68,7 +68,6 @@ public class Graph extends JPanel{
 					dummyShape = (ShapeItem) items.getItems().get(i);
 					if(dummyShape.getColor()!=null) {
 						scanLineFill(g,  dummyShape.getPolygon(g, originX, originY, scale), dummyShape.getColor());
-						drawShape(g, dummyShape);
 					}
 					drawShape(g, dummyShape);
 				}else if(items.getItems().get(i) instanceof LineItem) {
@@ -171,6 +170,7 @@ public class Graph extends JPanel{
 	private void drawShape(Graphics g, ShapeItem shape) {
 		Graphics2D g2 = (Graphics2D) g;
 		g2.setStroke(new BasicStroke(2.5f));
+		g2.setColor(Color.black);
 		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		g2.drawPolygon(shape.getPolygon(g2, originX, originY, scale));
 	}
@@ -329,13 +329,17 @@ public class Graph extends JPanel{
 		public void mouseWheelMoved(MouseWheelEvent e) {
 			int offsetScale=0;
 			if(e.getUnitsToScroll()<0) {
-				offsetScale = -1;
-			}else if(e.getUnitsToScroll()>0) {
 				offsetScale = 1;
+			}else if(e.getUnitsToScroll()>0) {
+				offsetScale = -1;
 			}
 			
 			if((scale>20 && e.getUnitsToScroll()>0) || (scale<1000000 && e.getUnitsToScroll()<0)) {
-				scale -= offsetScale;
+				double originXRef = ((initRefX-originX)*1.0)/scale;
+				double originYRef = ((originY-initRefY)*1.0)/scale;
+				scale += offsetScale;
+				originX = -(int)(((originXRef)*scale)+0.5)+initRefX;
+				originY = (int)(((originYRef)*scale)+0.5)+initRefY;
 				repaint();
 			}
 		}

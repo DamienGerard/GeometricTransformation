@@ -99,7 +99,7 @@ public class mainBoard extends JPanel{
 		add(BorderLayout.CENTER, myGraph);
 		
 		helper = new JLabel("I'm here to help");
-		add(BorderLayout.SOUTH, helper);
+		//add(BorderLayout.SOUTH, helper);
 		
 	
 	}

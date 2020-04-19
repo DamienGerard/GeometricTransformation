@@ -15,7 +15,6 @@ public class mainBoard extends JPanel{
 	private JButton addLine;
 	private JButton clip;
 	private JButton clear;
-	private JLabel helper;
 	
 	mainBoard(){
 		setLayout(new BorderLayout());
@@ -97,10 +96,6 @@ public class mainBoard extends JPanel{
 		
 		myGraph = new Graph(600, 450, itemListPanel);
 		add(BorderLayout.CENTER, myGraph);
-		
-		helper = new JLabel("I'm here to help");
-		//add(BorderLayout.SOUTH, helper);
-		
 	
 	}
 }
